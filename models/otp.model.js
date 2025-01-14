@@ -25,7 +25,8 @@ async function sendVerificationEmail(email, otp) {
             email,
             "Verification Email",
             `<h1>Please confirm your OTP</h1>
-        <p>Here is your OTP code: ${otp}</p>`
+        <p>Here is your OTP code: ${otp}</p>
+        <p>Valid for 5 minutes only</p>`
         );
         console.log("Email sent successfully: ", mailResponse);
     } catch (error) {
@@ -36,9 +37,8 @@ async function sendVerificationEmail(email, otp) {
 otpSchema.pre("save", async function (next) {
     console.log("New document saved to the database");
     // Only send an email when a new document is created
-    if (this.isNew) {
-        await sendVerificationEmail(this.email, this.otp);
-    }
+
+    await sendVerificationEmail(this.email, this.otp);
     next();
 });
 const OTP = mongoose.model("OTP", otpSchema);
