@@ -3,6 +3,13 @@ import OTP from '../models/otp.model.js'
 import otpGenerator from 'otp-generator'
 import * as emailValidator from 'email-validator'
 import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
+
+const cookieOptions = {
+    secure: process.env.NODE_ENV == 'production' ? true : false,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+}
 
 export const sendOtp = async (req, res) => {
     try {
@@ -110,3 +117,47 @@ export const registerUser = async (req, res) => {
         return res.status(500).json({ success: false, error: error.message });
     }
 };
+
+export const loginUser = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return next(new AppError('Email and Password are required', 400));
+        }
+        const user = await User.findOne({ email }).select('+password');
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'user does not exist'
+            })
+        }
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) {
+            return res.status(401).json({
+                success: false,
+                message: 'password did not match'
+            })
+        }
+        const token = jwt.sign(
+            {
+                userId: user._id,
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: process.env.JWT_EXPIRY
+            }
+        )
+        res.cookie('token', token, cookieOptions);
+        user.password = undefined;
+        return res.status(200).json({
+            success: true,
+            message: 'user logged in',
+            user
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error,
+        })
+    }
+}
