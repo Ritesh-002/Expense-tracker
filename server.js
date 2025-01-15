@@ -10,7 +10,7 @@ const app = express();
 
 app.listen(PORT, () => {
     connectToDB();
-    console.log(`Server is listening on port http://localhot:${PORT}`);
+    console.log(`Server is listening on port ${process.env.BASE_URL}`);
 });
 
 // common middlewares
@@ -25,4 +25,3 @@ app.use('/api/v1', appRouter)
 app.get('/ping', (_req, res) => {
     res.send('Pong');
 });
-
